@@ -44,6 +44,12 @@
   revision = "2e71ec9dd5adce3b168cd0dbde03b5cc04951c30"
 
 [[projects]]
+  name = "github.com/fatih/structs"
+  packages = ["."]
+  revision = "a720dfa8df582c51dee1b36feabb906bde1588bd"
+  version = "v1.0.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/garyburd/go-oauth"
   packages = ["oauth"]
@@ -124,6 +130,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6c77d75d15e5a94b44396af46308fc4f23ee827ed83a40f7a8b480fa92b57e9d"
+  inputs-digest = "09da05b9430046b72d44f1cd2a9f640f3c74e5a976273d7412667cedddd24633"
   solver-name = "gps-cdcl"
   solver-version = 1

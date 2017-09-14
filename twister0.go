@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
@@ -16,7 +15,6 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/tkanos/gonfig"
 	"github.com/tsuna/gohbase"
-	"github.com/tsuna/gohbase/hrpc"
 )
 
 // Configuration of application
@@ -89,55 +87,9 @@ func main() {
 	anaconda.SetConsumerKey(configuration.ConsumerKey)
 	anaconda.SetConsumerSecret(configuration.ConsumerSecret)
 	r := mux.NewRouter()
-	r.HandleFunc("/oauth/callback", func(w http.ResponseWriter, r *http.Request) {
-		session, error := store.Get(r, "twister0")
-		if error != nil {
-			respond(w, nil, error.Error(), http.StatusInternalServerError)
-			return
-		}
-		val := session.Values["credentials"]
-		credentials, fucked := val.(*oauth.Credentials)
-		if fucked == false {
-			respond(w, nil, "Some shit went wrong.", http.StatusInternalServerError)
-			return
-		}
-		credentials, _, error = anaconda.GetCredentials(credentials, r.URL.Query().Get("oauth_verifier"))
-		if error != nil {
-			respond(w, nil, error.Error(), http.StatusInternalServerError)
-			return
-		}
-		api := anaconda.NewTwitterApi(credentials.Token, credentials.Secret)
-		result, error := api.GetSelf(nil)
-		if error != nil {
-			respond(w, nil, error.Error(), http.StatusInternalServerError)
-			return
-		}
-		values := map[string]map[string][]byte{"user": map[string][]byte{"token": []byte(credentials.Token), "tokenSecret": []byte(credentials.Secret)}}
-		putRequest, error := hrpc.NewPutStr(context.Background(), "twister0", result.IdStr, values)
-		_, error = client.Put(putRequest)
-		if error != nil {
-			respond(w, nil, error.Error(), http.StatusInternalServerError)
-			return
-		}
-		session.Values["credentials"] = credentials
-		session.Save(r, w)
-		http.Redirect(w, r, "/", http.StatusFound)
-	})
-	r.HandleFunc("/oauth/init", func(w http.ResponseWriter, r *http.Request) {
-		session, error := store.Get(r, "twister0")
-		if error != nil {
-			respond(w, nil, error.Error(), http.StatusInternalServerError)
-			return
-		}
-		url, credentials, error := anaconda.AuthorizationURL("http://localhost:8081/oauth/callback")
-		if error != nil {
-			respond(w, nil, error.Error(), http.StatusInternalServerError)
-			return
-		}
-		session.Values["credentials"] = credentials
-		session.Save(r, w)
-		http.Redirect(w, r, url, http.StatusFound)
-	})
+	r.HandleFunc("/oauth/callback", OAuthCallback)
+	r.HandleFunc("/oauth/init", OAuthInit)
+	r.HandleFunc("/oauth/self", OAuthSelf)
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		body, error := ioutil.ReadFile("index.html")
 		if error != nil {
@@ -146,6 +98,7 @@ func main() {
 		}
 		fmt.Fprint(w, string(body))
 	})
+	r.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
 	http.Handle("/", r)
 	http.ListenAndServe(":8081", r)
 }
