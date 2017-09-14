@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"net/http"
-	"net/url"
 
 	"github.com/ChimeraCoder/anaconda"
 	"github.com/garyburd/go-oauth/oauth"
@@ -58,7 +57,7 @@ func OAuthCallback(w http.ResponseWriter, r *http.Request) {
 		respond(w, nil, error.Error(), http.StatusInternalServerError)
 		return
 	}
-	delete(session, "credentials")
+	delete(session.Values, "credentials")
 	session.Values["idStr"] = result.IdStr
 	session.Save(r, w)
 	http.Redirect(w, r, "/", http.StatusFound)
@@ -71,17 +70,19 @@ func OAuthSelf(w http.ResponseWriter, r *http.Request) {
 		respond(w, nil, error.Error(), http.StatusInternalServerError)
 		return
 	}
-	val := session.Values["credentials"]
-	credentials, fucked := val.(*oauth.Credentials)
-	if fucked == false {
-		respond(w, nil, "Some shit went wrong.", http.StatusInternalServerError)
-		return
-	}
-	api := anaconda.NewTwitterApi(credentials.Token, credentials.Secret)
-	result, error := api.GetSelf(url.Values{"skip_status": {string("true")}})
-	if error != nil {
-		respond(w, nil, error.Error(), http.StatusInternalServerError)
-		return
-	}
-	respond(w, result, nil, http.StatusOK)
+	// val := session.Values["credentials"]
+	// credentials, fucked := val.(*oauth.Credentials)
+	// if fucked == false {
+	// 	respond(w, nil, "Some shit went wrong.", http.StatusInternalServerError)
+	// 	return
+	// }
+	// api := anaconda.NewTwitterApi(credentials.Token, credentials.Secret)
+	// _, error = api.GetSelf(url.Values{"skip_status": {string("true")}})
+	// // result, error := api.GetSelf(url.Values{"skip_status": {string("true")}})
+	// if error != nil {
+	// 	respond(w, nil, error.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
+	respond(w, session.Values["idStr"], nil, http.StatusOK)
+	// respond(w, result, nil, http.StatusOK)
 }
